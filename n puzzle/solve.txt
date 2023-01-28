@@ -1,0 +1,85 @@
+import collections
+from node import Node
+import numpy as np
+import heapq
+
+class Solver:
+    def __init__(self, start, N):
+        self.start = start
+        self.N = N
+
+    def solve(self):
+        queue = collections.deque([Node(self.start)])
+        seen = set()
+        seen.add(queue[0].step)
+        while queue:
+            queue = collections.deque(
+                sorted(list(queue), key=lambda node: node.f))
+            node = queue.popleft()
+           
+            if node.solved:
+                return node.solutionPath
+            
+            for move, action in node.actions:
+                child = Node(move(), node, action)
+
+                if child.step not in seen:
+                    queue.appendleft(child)
+                    seen.add(child.step)
+
+    # -------------------------------------------------------------------------
+
+    def getInvCount(self, arr):
+        inv_count = 0
+        empty_value = -1
+        for i in range(0, len(arr)):
+            for j in range(i + 1, len(arr)):
+                if (arr[i] < arr[j]):
+                    inv_count += 1
+
+        return inv_count
+
+    def get0Index(self, puzzle):
+        for (y, row) in enumerate(puzzle):
+            for x, value in enumerate(row):
+                if (value == 0):
+                    return (y, x)
+
+    def isSolveble(self, puzzle):
+        zeroLocation = self.get0Index(puzzle)
+        yIsEven = False
+        if zeroLocation[0] % 2 == 0:
+            yIsEven = True
+        else:
+            yIsEven = False
+
+        inversEven = False
+        l = []
+        for i in puzzle:
+            for j in i:
+                if j != 0:
+                    l.append(j)
+        inversion_count = 0
+        for index, value in enumerate(l):
+            for value_to_compare in l[index + 1: len(l)]:
+                if value > value_to_compare:
+                    inversion_count += 1
+
+        invCount = inversion_count
+
+        if invCount % 2 == 0:
+            inversEven = True
+        else:
+            inversEven = False
+        widthEven = False
+        if self.N % 2 == 0:
+            widthEven = True
+        else:
+            widthEven = False
+
+        if widthEven:
+            zero_odd = not yIsEven
+
+        return ((not widthEven and inversEven)
+                or
+                (widthEven and (zero_odd == inversEven)))

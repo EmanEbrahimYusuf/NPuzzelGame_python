@@ -1,0 +1,123 @@
+import itertools
+import numpy as np
+import time
+class Puzzel:
+    def __init__(self, array):
+        self.array = array
+        self.col_row = len(array[0])
+
+    @property
+    def solved(self):
+        size = pow(self.col_row, 2)
+        return str(self) == ''.join(map(str, range(1, size))) + '0'
+
+    @property
+    def manhattanDistance(self):
+        distance = 0
+        for i in range(0, self.col_row):
+            for j in range(0, self.col_row):
+                if(self.array[i][j] != 0):
+                    x, y = divmod(self.array[i][j]-1, self.col_row)
+                    distance += abs(x-i)+abs(y-j)
+        return distance # + num of step
+
+    def moveAction(self, at, to):
+        return lambda: self.indexMove(at, to)
+    
+    def get0Index(self, puzzle):
+        y,x=np.where(np.array(puzzle)==0)
+        return y[0],x[0]
+    
+    def moveToRight(self,r,c,moves):
+        if r >= 0 and c-1 >= 0 and r < self.col_row and c-1 < self.col_row:
+            move = self.indexMove((r, c-1), (r, c)), 'Right'
+            moves.append(move)
+    
+    def moveToLeft(self,r,c,moves):
+        if r >= 0 and c+1 >= 0 and r < self.col_row and c+1 < self.col_row:
+            move = self.indexMove((r, c+1), (r, c)), 'Left'
+            moves.append(move)
+            
+    def moveToUP(self,r,c,moves):
+        if r+1 >= 0 and c >= 0 and r+1 < self.col_row and c < self.col_row:
+            move = self.indexMove((r+1, c), (r, c)), 'Up'
+            moves.append(move)
+    
+    def moveToDown(self,r,c,moves):
+        if r-1 >= 0 and c >= 0 and r-1 < self.col_row and c < self.col_row:
+            move = self.indexMove((r-1, c), (r, c)), 'Down'
+            moves.append(move)
+
+    @property
+    def actions2(self):
+        moves = []
+        r,c=self.get0Index(self.array)
+        self.moveToRight(r,c,moves)
+        self.moveToLeft(r,c,moves)
+        self.moveToUP(r,c,moves)
+        self.moveToDown(r,c,moves)
+        return moves
+    
+    @property
+    def actions(self):
+        moves = []
+        for i, j in itertools.product(range(self.col_row), range(self.col_row)):
+            direcs = {'Right': (i, j-1),
+                      'Left': (i, j+1),
+                      'Down': (i-1, j),
+                      'Up': (i+1, j)
+                      }
+            for action, (r, c) in direcs.items():
+                if r >= 0 and c >= 0 and r < self.col_row and c < self.col_row and \
+                self.array[r][c] == 0:
+                    move = self.moveAction((i, j), (r, c)), action
+                    moves.append(move)
+        return moves
+
+    def copy(self):
+        copyArray = []
+        for row in self.array:
+            copyArray.append([x for x in row])
+        return Puzzel(copyArray)
+
+    def indexMove(self, at, to):
+        copy = self.copy()
+        i, j = at
+        r, c = to
+        copy.array[i][j], copy.array[r][c] = copy.array[r][c], copy.array[i][j]
+        return copy
+
+    def printPuzzel(self):
+        for row in self.array:
+            print(row)
+        print()
+
+    def __str__(self):
+        return ''.join(map(str, self))
+       
+      
+    def __iter__(self):
+        for row in self.array:
+            yield from row
+
+    def getElementPostion(self, element, array):
+        y,x=np.where(np.array(array)==element)
+        return y[0],x[0]
+    
+    def goalState(self):
+        l = range(1, (self.col_row*self.col_row))
+        l = list(l)
+        l.append(0)
+        l=np.array(l)
+        l=l.reshape(self.col_row,self.col_row)
+        return l
+
+    @property
+    def hammingDistance(self):
+        gaol = self.goalState()
+        c = 0
+        for x in range(self.col_row):
+            for y in range(self.col_row):
+                if gaol[x][y] != self.array[x][y]:
+                    c = c+1
+        return c
